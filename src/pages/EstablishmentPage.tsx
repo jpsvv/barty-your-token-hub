@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Heart, Clock, MapPin, CreditCard, Star, 
-  ChevronRight, Share2, Plus, Minus, X, ShoppingCart
+  ChevronRight, Share2, Plus, Minus, X, ShoppingCart, Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -141,6 +141,22 @@ export default function EstablishmentPage() {
       newMap.set(addonId, current > 0 ? 0 : 1);
       return newMap;
     });
+  };
+
+  const getValidityText = () => {
+    if (!establishment) return '';
+    const validity = establishment.ticketValidity;
+    
+    switch (validity.type) {
+      case 'same_day':
+        return 'Válido apenas no dia da compra';
+      case 'fixed_date':
+        const date = new Date(validity.fixedDate + 'T00:00:00');
+        return `Válido até ${date.toLocaleDateString('pt-BR')}`;
+      case 'days':
+      default:
+        return `Válido por ${validity.days || 30} dias após a compra`;
+    }
   };
 
   return (
@@ -398,6 +414,10 @@ export default function EstablishmentPage() {
                     <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4" />
                       Tempo de preparo: ~{selectedProduct.prepTime} min
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      {getValidityText()}
                     </div>
                     <p className="text-muted-foreground mt-2">{selectedProduct.description}</p>
                   </div>
