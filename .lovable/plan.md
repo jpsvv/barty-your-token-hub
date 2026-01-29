@@ -1,128 +1,135 @@
 
 
-# 🎫 Plano de Implementação - Barty (App do Usuário)
+# Plano de Correções - Barty App
 
-## Visão Geral
-Plataforma de venda de fichas digitais para estabelecimentos gastronômicos e eventos, permitindo compra antecipada e consumo flexível de produtos.
+## Resumo das Alterações
 
----
+Foram identificados 3 problemas que precisam ser corrigidos:
 
-## 🎨 Design System
-- **Tema:** Modo escuro como padrão com opção de modo claro
-- **Cores principais:** Fundo escuro (#0D0D0D), acentos em laranja vibrante (#FF6B00) e dourado (#FFB800)
-- **Tipografia:** Moderna e limpa
-- **Componentes:** Cards com bordas sutis, botões arredondados, ícones minimalistas
+1. **Histórico incompleto** - Falta o histórico de utilização e encaminhamento de fichas
+2. **Botão Presentear restrito** - Só aparece para fichas que não precisam de preparo
+3. **Saudação ausente** - Falta a mensagem "Olá, [nome]" na Home
 
 ---
 
-## 📱 Telas e Funcionalidades
+## Correção 1: Histórico Completo na Aba Fichas
 
-### 1. Autenticação
-- Login com email/senha
-- Cadastro de nova conta
-- Login com Google
-- Recuperação de senha
-- Validação de campos
+### Situação Atual
+O histórico mostra apenas as **compras** (orders), mas não mostra quando as fichas foram **utilizadas** ou **presenteadas**.
 
-### 2. Home (Explorar)
-- **Barra de busca** com seletor de cidade
-- **Carrossel de favoritos** com logos dos estabelecimentos
-- **Card Carteira Barty** com saldo e botão depositar
-- **Lista de estabelecimentos** com:
-  - Logo, nome, avaliação (estrelas)
-  - Ticker de promoção
-  - Botão favoritar (coração)
-  - Ordenação por distância ou avaliação
-- **Toggle modo claro/escuro**
+### Solução
+Reorganizar a aba Histórico em duas seções:
+- **Fichas Compradas**: Lista de compras com detalhes (já existe)
+- **Fichas Usadas/Encaminhadas**: Nova seção mostrando fichas com status `used` ou `gifted`
 
-### 3. Cardápio do Estabelecimento
-- **Header:** Logo, imagem de fundo, nome, descrição
-- **Informações:** Horário, formas de pagamento, endereço, CNPJ
-- **Avaliações:** Nota média, ranking, comentários com respostas
-- **Destaques:** Carrossel de produtos em destaque
-- **Menu:** 
-  - Navegação por categorias (carrossel + hamburger)
-  - Lista de produtos com foto, nome, tempo de preparo, preço
-  - Indicador de promoção (preço antigo riscado + desconto em verde)
-- **Modal do produto:** Adicionais, observações, seletor de quantidade
-
-### 4. Carrinho
-- Lista de itens com foto, nome, tempo de preparo, valor
-- Controle de quantidade (+ / -)
-- Botão excluir item e limpar carrinho
-- Valor total
-- **Pop-up de conflito** (produtos de estabelecimentos diferentes)
-- **Checkout:**
-  - Seleção de forma de pagamento (Cartão, PIX, Dinheiro, Carteira Barty)
-  - Resumo do pedido
-  - Confirmação de pagamento
-
-### 5. Minhas Fichas
-- **Lista por estabelecimento** (colapsível)
-- **Card de cada ficha:**
-  - Nome do produto, valor, tempo médio de preparo
-  - Status: Disponível / Enviar para preparo / Em produção
-  - Cronômetro de tempo decorrido
+### Alterações em `src/pages/Tickets.tsx`
+- Adicionar filtro para fichas usadas (`status === 'used'`)
+- Adicionar filtro para fichas encaminhadas (`status === 'gifted'`)
+- Criar nova seção na TabsContent "history" com duas sub-abas ou seções colapsáveis:
+  - Compras (existente)
+  - Utilizações/Encaminhamentos (novo)
+- Exibir para cada ficha usada/encaminhada:
+  - Nome do produto
+  - Estabelecimento
+  - Data/hora da utilização ou encaminhamento
   - Número do pedido
-  - Validade da ficha
-  - Botão encaminhar/presentear
-- **Seleção múltipla** para gerar QR Code
-- **Modal QR Code:**
-  - Lista de fichas selecionadas
-  - Alerta para produtos manufaturados
-  - Fechamento automático após leitura pelo staff
-- **Pop-up de confirmação** para enviar à produção (com aviso de expiração)
-- **Aba Histórico:**
-  - Fichas compradas (dia, estabelecimento, detalhes)
-  - Fichas usadas/encaminhadas
-
-### 6. Perfil
-- **Dados da conta:** Nome, CPF, email, telefone
-- **Pagamentos:**
-  - Carteira Barty (saldo + depositar)
-  - Cartões cadastrados (adicionar/remover)
-  - Histórico de transações
-- **Depositar:**
-  - PIX (chave + copiar)
-  - Cartão de crédito
+  - Para fichas encaminhadas: telefone de destino
 
 ---
 
-## 🗄️ Backend (Lovable Cloud)
+## Correção 2: Botão Presentear para Todas as Fichas Disponíveis
 
-### Tabelas do Banco de Dados
-- **profiles** - Dados do usuário
-- **establishments** - Estabelecimentos/eventos
-- **products** - Produtos dos estabelecimentos
-- **categories** - Categorias de produtos
-- **product_addons** - Adicionais dos produtos
-- **tickets** - Fichas compradas pelos usuários
-- **orders** - Pedidos/compras
-- **favorites** - Estabelecimentos favoritos
-- **wallet_transactions** - Transações da carteira
-- **reviews** - Avaliações dos estabelecimentos
-- **cities** - Cidades disponíveis
+### Situação Atual
+No componente `TicketCard`, o botão "Presentear" só aparece quando:
+```tsx
+{isAvailable && !needsProduction && (...)}
+```
 
-### Autenticação
-- Supabase Auth com email/senha e Google OAuth
+Isso exclui fichas de produtos que precisam de preparo.
+
+### Solução
+Alterar a condição para mostrar o botão "Presentear" para **todas** as fichas com status `available`, independente de precisarem de preparo ou não.
+
+### Alteração em `src/pages/Tickets.tsx`
+Modificar a lógica do botão Presentear (linhas 148-161):
+
+**De:**
+```tsx
+{isAvailable && !needsProduction && (
+  <Button ...>Presentear</Button>
+)}
+```
+
+**Para:**
+```tsx
+{isAvailable && (
+  <Button ...>Presentear</Button>
+)}
+```
+
+O layout será ajustado para mostrar ambos os botões ("Enviar para preparo" e "Presentear") lado a lado quando aplicável.
 
 ---
 
-## 🔄 Fluxos Principais
+## Correção 3: Saudação Personalizada na Home
 
-1. **Explorar → Comprar:** Home → Selecionar estabelecimento → Cardápio → Adicionar produtos → Carrinho → Pagamento → Fichas geradas
+### Situação Atual
+O header mostra apenas "Barty" sem saudação ao usuário.
 
-2. **Usar Ficha (produto pronto):** Minhas Fichas → Selecionar fichas → Gerar QR Code → Staff lê → Fichas consumidas
+### Solução
+Adicionar uma linha de saudação abaixo do título quando o usuário estiver logado.
 
-3. **Usar Ficha (produto manufaturado):** Minhas Fichas → Enviar para produção → Acompanhar tempo → Selecionar fichas → Gerar QR Code → Retirar produto
+### Alteração em `src/pages/Home.tsx`
+No header (linhas 59-62), adicionar após o título:
 
-4. **Presentear:** Minhas Fichas → Selecionar ficha → Encaminhar → Digitar telefone → Confirmar envio
+```tsx
+<div>
+  <h1 className="text-2xl font-bold text-gradient">Barty</h1>
+  {isAuthenticated && user && (
+    <p className="text-sm text-muted-foreground">Olá, {user.name.split(' ')[0]}</p>
+  )}
+</div>
+```
+
+Isso mostrará apenas o primeiro nome do usuário para uma saudação mais amigável.
 
 ---
 
-## 📦 Dados de Demonstração
-- 5+ estabelecimentos fictícios com logos e imagens
-- Cardápios completos com categorias e produtos
-- Promoções ativas
-- Avaliações e comentários
+## Detalhes Técnicos
+
+### Estrutura do Histórico Atualizado
+
+```text
+Histórico
+  |
+  +-- Compras (seção existente)
+  |     Lista de orders com detalhes
+  |
+  +-- Fichas Utilizadas (nova seção)
+  |     - Fichas com status 'used'
+  |     - Data/hora de usedAt
+  |     - Nº do pedido
+  |
+  +-- Fichas Encaminhadas (nova seção)
+        - Fichas com status 'gifted'
+        - Telefone destino (giftedTo)
+        - Data/hora
+```
+
+### Arquivos a Serem Modificados
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/pages/Tickets.tsx` | Adicionar seções de histórico de uso/encaminhamento; Ajustar condição do botão Presentear |
+| `src/pages/Home.tsx` | Adicionar saudação "Olá, [nome]" no header |
+
+---
+
+## Resultado Esperado
+
+Após as correções:
+
+1. O usuário verá no Histórico tanto as compras quanto quando utilizou ou presenteou cada ficha
+2. Todas as fichas disponíveis terão a opção de Presentear, mesmo as que precisam de preparo
+3. A Home mostrará "Olá, Maria" (ou o nome do usuário) abaixo do título "Barty"
 
