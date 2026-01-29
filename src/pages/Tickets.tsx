@@ -145,11 +145,11 @@ function TicketCard({
             Enviar para preparo
           </Button>
         )}
-        {isAvailable && !needsProduction && (
+        {isAvailable && (
           <Button 
             size="sm" 
             variant="outline"
-            className="flex-1"
+            className={needsProduction ? "" : "flex-1"}
             onClick={(e) => {
               e.stopPropagation();
               onGift();
@@ -349,49 +349,132 @@ export default function Tickets() {
             )}
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-4">
-            {orders.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="h-16 w-16 rounded-full bg-muted mx-auto flex items-center justify-center mb-4">
-                  <History className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h2 className="text-lg font-semibold mb-2">Sem histórico</h2>
-                <p className="text-muted-foreground">
-                  Suas compras aparecerão aqui
-                </p>
-              </div>
-            ) : (
-              orders.map(order => (
-                <Card key={order.id} className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <img 
-                      src={order.establishment.logo}
-                      alt={order.establishment.name}
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-medium">{order.establishment.name}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {order.createdAt.toLocaleDateString('pt-BR')} às {order.createdAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                    <Badge variant="secondary">#{order.orderNumber}</Badge>
-                  </div>
-                  <div className="space-y-1 text-sm">
-                    {order.items.map((item, i) => (
-                      <div key={i} className="flex justify-between text-muted-foreground">
-                        <span>{item.quantity}x {item.productName}</span>
-                        <span>R$ {(item.unitPrice * item.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between font-medium mt-2 pt-2 border-t border-border">
-                    <span>Total</span>
-                    <span>R$ {order.total.toFixed(2)}</span>
-                  </div>
+          <TabsContent value="history" className="space-y-6">
+            {/* Seção de Compras */}
+            <section>
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <TicketIcon className="h-5 w-5 text-primary" />
+                Compras
+              </h2>
+              {orders.length === 0 ? (
+                <Card className="p-4 text-center text-muted-foreground">
+                  Nenhuma compra realizada
                 </Card>
-              ))
-            )}
+              ) : (
+                <div className="space-y-3">
+                  {orders.map(order => (
+                    <Card key={order.id} className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <img 
+                          src={order.establishment.logo}
+                          alt={order.establishment.name}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                        <div className="flex-1">
+                          <h3 className="font-medium">{order.establishment.name}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {order.createdAt.toLocaleDateString('pt-BR')} às {order.createdAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <Badge variant="secondary">#{order.orderNumber}</Badge>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        {order.items.map((item, i) => (
+                          <div key={i} className="flex justify-between text-muted-foreground">
+                            <span>{item.quantity}x {item.productName}</span>
+                            <span>R$ {(item.unitPrice * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between font-medium mt-2 pt-2 border-t border-border">
+                        <span>Total</span>
+                        <span>R$ {order.total.toFixed(2)}</span>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Seção de Fichas Utilizadas */}
+            <section>
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Check className="h-5 w-5 text-success" />
+                Fichas Utilizadas
+              </h2>
+              {tickets.filter(t => t.status === 'used').length === 0 ? (
+                <Card className="p-4 text-center text-muted-foreground">
+                  Nenhuma ficha utilizada
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {tickets.filter(t => t.status === 'used').map(ticket => (
+                    <Card key={ticket.id} className="p-4">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={ticket.product.image}
+                          alt={ticket.product.name}
+                          className="h-12 w-12 rounded-lg object-cover"
+                        />
+                        <div className="flex-1">
+                          <h3 className="font-medium">{ticket.product.name}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {ticket.establishment.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Utilizada em {ticket.usedAt?.toLocaleDateString('pt-BR')} às {ticket.usedAt?.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <Badge variant="outline">#{ticket.orderNumber}</Badge>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Seção de Fichas Encaminhadas/Presenteadas */}
+            <section>
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Gift className="h-5 w-5 text-primary" />
+                Fichas Presenteadas
+              </h2>
+              {tickets.filter(t => t.status === 'gifted').length === 0 ? (
+                <Card className="p-4 text-center text-muted-foreground">
+                  Nenhuma ficha presenteada
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {tickets.filter(t => t.status === 'gifted').map(ticket => (
+                    <Card key={ticket.id} className="p-4">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={ticket.product.image}
+                          alt={ticket.product.name}
+                          className="h-12 w-12 rounded-lg object-cover"
+                        />
+                        <div className="flex-1">
+                          <h3 className="font-medium">{ticket.product.name}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {ticket.establishment.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Enviada para: {ticket.giftedTo}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Pedido #{ticket.orderNumber}
+                          </p>
+                        </div>
+                        <Badge className="bg-primary/10 text-primary border-0">
+                          <Gift className="h-3 w-3 mr-1" />
+                          Presente
+                        </Badge>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </section>
           </TabsContent>
         </Tabs>
       </main>

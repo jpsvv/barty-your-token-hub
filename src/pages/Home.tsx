@@ -57,7 +57,12 @@ export default function Home() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
         <div className="container py-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gradient">Barty</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gradient">Barty</h1>
+              {isAuthenticated && user && (
+                <p className="text-sm text-muted-foreground">Olá, {user.name.split(' ')[0]}</p>
+              )}
+            </div>
             <ThemeToggle />
           </div>
 
