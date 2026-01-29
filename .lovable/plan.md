@@ -1,135 +1,153 @@
 
+# Plano de Correção - Validade Configurável das Fichas
 
-# Plano de Correções - Barty App
+## Resumo
 
-## Resumo das Alterações
-
-Foram identificados 3 problemas que precisam ser corrigidos:
-
-1. **Histórico incompleto** - Falta o histórico de utilização e encaminhamento de fichas
-2. **Botão Presentear restrito** - Só aparece para fichas que não precisam de preparo
-3. **Saudação ausente** - Falta a mensagem "Olá, [nome]" na Home
+Atualmente, todas as fichas têm validade fixa de 30 dias após a compra. A correção permite que cada estabelecimento/evento defina a validade das fichas de seus produtos, podendo ser:
+- Validade para o mesmo dia (ex: eventos de um dia)
+- Validade para uma data específica (ex: festival de 3 dias)
+- Validade em dias a partir da compra (ex: 7 dias, 30 dias)
 
 ---
 
-## Correção 1: Histórico Completo na Aba Fichas
+## Alterações Necessárias
 
-### Situação Atual
-O histórico mostra apenas as **compras** (orders), mas não mostra quando as fichas foram **utilizadas** ou **presenteadas**.
+### 1. Atualizar Tipos (`src/types/index.ts`)
 
-### Solução
-Reorganizar a aba Histórico em duas seções:
-- **Fichas Compradas**: Lista de compras com detalhes (já existe)
-- **Fichas Usadas/Encaminhadas**: Nova seção mostrando fichas com status `used` ou `gifted`
+Adicionar campo de configuração de validade no `Establishment`:
 
-### Alterações em `src/pages/Tickets.tsx`
-- Adicionar filtro para fichas usadas (`status === 'used'`)
-- Adicionar filtro para fichas encaminhadas (`status === 'gifted'`)
-- Criar nova seção na TabsContent "history" com duas sub-abas ou seções colapsáveis:
-  - Compras (existente)
-  - Utilizações/Encaminhamentos (novo)
-- Exibir para cada ficha usada/encaminhada:
-  - Nome do produto
-  - Estabelecimento
-  - Data/hora da utilização ou encaminhamento
-  - Número do pedido
-  - Para fichas encaminhadas: telefone de destino
-
----
-
-## Correção 2: Botão Presentear para Todas as Fichas Disponíveis
-
-### Situação Atual
-No componente `TicketCard`, o botão "Presentear" só aparece quando:
-```tsx
-{isAvailable && !needsProduction && (...)}
+```typescript
+export interface Establishment {
+  // ... campos existentes ...
+  
+  // Configuração de validade das fichas
+  ticketValidity: {
+    type: 'days' | 'fixed_date' | 'same_day';
+    days?: number;        // Se type === 'days': quantidade de dias
+    fixedDate?: string;   // Se type === 'fixed_date': data ISO (ex: "2024-02-22")
+  };
+}
 ```
 
-Isso exclui fichas de produtos que precisam de preparo.
+**Opções de validade:**
+- `same_day`: Ficha válida apenas no dia da compra (expira às 23:59)
+- `days`: Ficha válida por X dias a partir da compra
+- `fixed_date`: Ficha válida até uma data específica (útil para eventos)
 
-### Solução
-Alterar a condição para mostrar o botão "Presentear" para **todas** as fichas com status `available`, independente de precisarem de preparo ou não.
+---
 
-### Alteração em `src/pages/Tickets.tsx`
-Modificar a lógica do botão Presentear (linhas 148-161):
+### 2. Atualizar Mock Data (`src/data/mockData.ts`)
 
-**De:**
-```tsx
-{isAvailable && !needsProduction && (
-  <Button ...>Presentear</Button>
-)}
+Adicionar configuração de validade para cada estabelecimento de demonstração:
+
+| Estabelecimento | Tipo de Validade | Configuração |
+|-----------------|------------------|--------------|
+| Bar do Zé | days | 30 dias |
+| Boteco Carioca | days | 15 dias |
+| Gastrobar Premium | days | 7 dias |
+| Festival de Cerveja | fixed_date | 22/02/2024 |
+| Pizzaria Bella Napoli | same_day | - |
+
+---
+
+### 3. Atualizar `TicketsContext.tsx`
+
+Modificar a função `createOrder` para calcular a validade baseada na configuração do estabelecimento:
+
+**De (linha 52):**
+```typescript
+expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
 ```
 
 **Para:**
+```typescript
+expiresAt: calculateTicketExpiration(establishment.ticketValidity),
+```
+
+**Nova função auxiliar:**
+```typescript
+function calculateTicketExpiration(validity: Establishment['ticketValidity']): Date {
+  const now = new Date();
+  
+  switch (validity.type) {
+    case 'same_day':
+      // Expira às 23:59:59 do dia atual
+      const endOfDay = new Date(now);
+      endOfDay.setHours(23, 59, 59, 999);
+      return endOfDay;
+      
+    case 'fixed_date':
+      // Data fixa definida pelo estabelecimento
+      const fixed = new Date(validity.fixedDate + 'T23:59:59');
+      return fixed;
+      
+    case 'days':
+    default:
+      // X dias a partir da compra
+      const days = validity.days || 30;
+      return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  }
+}
+```
+
+---
+
+### 4. Exibir Validade no Card da Ficha (`src/pages/Tickets.tsx`)
+
+Adicionar exibição da data de validade no `TicketCard` para que o usuário saiba quando a ficha expira:
+
 ```tsx
-{isAvailable && (
-  <Button ...>Presentear</Button>
+<p className="text-xs text-muted-foreground">
+  Válido até {ticket.expiresAt.toLocaleDateString('pt-BR')}
+</p>
+```
+
+Para fichas com validade no mesmo dia, destacar com cor de alerta:
+```tsx
+{isExpiringSoon && (
+  <Badge variant="destructive" className="text-xs">
+    Expira hoje!
+  </Badge>
 )}
 ```
 
-O layout será ajustado para mostrar ambos os botões ("Enviar para preparo" e "Presentear") lado a lado quando aplicável.
+---
+
+### 5. Verificação de Fichas Expiradas
+
+Adicionar lógica no `TicketsContext` para marcar automaticamente fichas como expiradas quando `expiresAt < now`:
+
+```typescript
+// Verificar fichas expiradas ao carregar
+useEffect(() => {
+  const now = new Date();
+  setTickets(prev => prev.map(ticket => {
+    if (ticket.status === 'available' && ticket.expiresAt < now) {
+      return { ...ticket, status: 'expired' };
+    }
+    return ticket;
+  }));
+}, []);
+```
 
 ---
 
-## Correção 3: Saudação Personalizada na Home
-
-### Situação Atual
-O header mostra apenas "Barty" sem saudação ao usuário.
-
-### Solução
-Adicionar uma linha de saudação abaixo do título quando o usuário estiver logado.
-
-### Alteração em `src/pages/Home.tsx`
-No header (linhas 59-62), adicionar após o título:
-
-```tsx
-<div>
-  <h1 className="text-2xl font-bold text-gradient">Barty</h1>
-  {isAuthenticated && user && (
-    <p className="text-sm text-muted-foreground">Olá, {user.name.split(' ')[0]}</p>
-  )}
-</div>
-```
-
-Isso mostrará apenas o primeiro nome do usuário para uma saudação mais amigável.
-
----
-
-## Detalhes Técnicos
-
-### Estrutura do Histórico Atualizado
-
-```text
-Histórico
-  |
-  +-- Compras (seção existente)
-  |     Lista de orders com detalhes
-  |
-  +-- Fichas Utilizadas (nova seção)
-  |     - Fichas com status 'used'
-  |     - Data/hora de usedAt
-  |     - Nº do pedido
-  |
-  +-- Fichas Encaminhadas (nova seção)
-        - Fichas com status 'gifted'
-        - Telefone destino (giftedTo)
-        - Data/hora
-```
-
-### Arquivos a Serem Modificados
+## Arquivos a Serem Modificados
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/pages/Tickets.tsx` | Adicionar seções de histórico de uso/encaminhamento; Ajustar condição do botão Presentear |
-| `src/pages/Home.tsx` | Adicionar saudação "Olá, [nome]" no header |
+| `src/types/index.ts` | Adicionar campo `ticketValidity` no tipo `Establishment` |
+| `src/data/mockData.ts` | Configurar validade para cada estabelecimento de demo |
+| `src/contexts/TicketsContext.tsx` | Usar configuração do estabelecimento para calcular `expiresAt` |
+| `src/pages/Tickets.tsx` | Exibir data de validade no card da ficha |
 
 ---
 
 ## Resultado Esperado
 
-Após as correções:
-
-1. O usuário verá no Histórico tanto as compras quanto quando utilizou ou presenteou cada ficha
-2. Todas as fichas disponíveis terão a opção de Presentear, mesmo as que precisam de preparo
-3. A Home mostrará "Olá, Maria" (ou o nome do usuário) abaixo do título "Barty"
-
+1. Cada estabelecimento pode definir sua própria regra de validade
+2. Fichas mostram claramente quando expiram
+3. Fichas próximas de expirar são destacadas visualmente
+4. Fichas expiradas saem da aba Fichas e vão para o histórico e são marcadas automaticamente como "expired"
+5. O Festival de Cerveja terá validade até a data final do evento
+6. A Pizzaria terá fichas válidas apenas no dia da compra
