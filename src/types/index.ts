@@ -6,6 +6,12 @@ export interface City {
   state: string;
 }
 
+export interface TicketValidityConfig {
+  type: 'days' | 'fixed_date' | 'same_day';
+  days?: number;        // Se type === 'days': quantidade de dias
+  fixedDate?: string;   // Se type === 'fixed_date': data ISO (ex: "2024-02-22")
+}
+
 export interface Establishment {
   id: string;
   name: string;
@@ -22,6 +28,7 @@ export interface Establishment {
   hasPromotion: boolean;
   promotionText?: string;
   distance?: number;
+  ticketValidity: TicketValidityConfig;
 }
 
 export interface Category {

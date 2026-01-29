@@ -25,6 +25,7 @@ export const establishments: Establishment[] = [
     hasPromotion: true,
     promotionText: 'Happy Hour: 50% OFF em chopes até 19h',
     distance: 0.8,
+    ticketValidity: { type: 'days', days: 30 },
   },
   {
     id: '2',
@@ -41,6 +42,7 @@ export const establishments: Establishment[] = [
     paymentMethods: ['Cartão', 'PIX', 'Carteira Barty'],
     hasPromotion: false,
     distance: 1.2,
+    ticketValidity: { type: 'days', days: 15 },
   },
   {
     id: '3',
@@ -58,6 +60,7 @@ export const establishments: Establishment[] = [
     hasPromotion: true,
     promotionText: '20% OFF no primeiro pedido',
     distance: 2.5,
+    ticketValidity: { type: 'days', days: 7 },
   },
   {
     id: '4',
@@ -75,6 +78,7 @@ export const establishments: Establishment[] = [
     hasPromotion: true,
     promotionText: 'Combo: 3 chopes por R$ 45',
     distance: 5.0,
+    ticketValidity: { type: 'fixed_date', fixedDate: '2025-02-22' },
   },
   {
     id: '5',
@@ -91,6 +95,7 @@ export const establishments: Establishment[] = [
     paymentMethods: ['Cartão', 'PIX', 'Dinheiro', 'Carteira Barty'],
     hasPromotion: false,
     distance: 1.5,
+    ticketValidity: { type: 'same_day' },
   },
 ];
 
