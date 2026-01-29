@@ -1,6 +1,34 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { Ticket, Order, Product, Establishment, WalletTransaction } from '@/types';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { Ticket, Order, Product, Establishment, WalletTransaction, TicketValidityConfig } from '@/types';
 import { establishments, products } from '@/data/mockData';
+
+// Helper function to calculate ticket expiration based on establishment config
+function calculateTicketExpiration(validity: TicketValidityConfig): Date {
+  const now = new Date();
+  
+  switch (validity.type) {
+    case 'same_day':
+      // Expira às 23:59:59 do dia atual
+      const endOfDay = new Date(now);
+      endOfDay.setHours(23, 59, 59, 999);
+      return endOfDay;
+      
+    case 'fixed_date':
+      // Data fixa definida pelo estabelecimento
+      if (validity.fixedDate) {
+        const fixed = new Date(validity.fixedDate + 'T23:59:59');
+        return fixed;
+      }
+      // Fallback: 30 dias
+      return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      
+    case 'days':
+    default:
+      // X dias a partir da compra
+      const days = validity.days || 30;
+      return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  }
+}
 
 interface TicketsContextType {
   tickets: Ticket[];
@@ -26,6 +54,25 @@ export function TicketsProvider({ children }: { children: ReactNode }) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+
+  // Verificar fichas expiradas ao carregar e periodicamente
+  useEffect(() => {
+    const checkExpiredTickets = () => {
+      const now = new Date();
+      setTickets(prev => prev.map(ticket => {
+        if (ticket.status === 'available' && ticket.expiresAt < now) {
+          return { ...ticket, status: 'expired' as const };
+        }
+        return ticket;
+      }));
+    };
+
+    checkExpiredTickets();
+    
+    // Verificar a cada minuto
+    const interval = setInterval(checkExpiredTickets, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const createOrder = useCallback((
     items: { product: Product; quantity: number; addons: { name: string; price: number; quantity: number }[] }[],
@@ -70,7 +117,7 @@ export function TicketsProvider({ children }: { children: ReactNode }) {
           orderId: order.id,
           orderNumber,
           status: 'available',
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          expiresAt: calculateTicketExpiration(establishment.ticketValidity),
           createdAt: new Date(),
         };
         newTickets.push(ticket);

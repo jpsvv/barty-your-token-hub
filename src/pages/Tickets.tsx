@@ -48,6 +48,13 @@ function formatTime(date: Date): string {
   return `${minutes}min`;
 }
 
+function isExpiringSoon(expiresAt: Date): boolean {
+  const now = new Date();
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
+  return expiresAt <= endOfToday;
+}
+
 function TicketCard({ 
   ticket, 
   isSelected, 
@@ -127,6 +134,20 @@ function TicketCard({
           <p className="text-xs text-muted-foreground mt-1">
             Pedido #{ticket.orderNumber}
           </p>
+          
+          {/* Validade da ficha */}
+          {isAvailable && (
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-xs text-muted-foreground">
+                Válido até {ticket.expiresAt.toLocaleDateString('pt-BR')}
+              </p>
+              {isExpiringSoon(ticket.expiresAt) && (
+                <Badge variant="destructive" className="text-xs py-0 px-1.5">
+                  Expira hoje!
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
