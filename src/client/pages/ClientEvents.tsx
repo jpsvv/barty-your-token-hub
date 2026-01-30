@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ClientLayout } from "../layouts/ClientLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,11 +146,32 @@ const mockMyEvents: ClientEvent[] = [
 ];
 
 const ClientEvents = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("invites");
   const [invites, setInvites] = useState<EventInvite[]>(mockInvites);
   const [myEvents, setMyEvents] = useState<ClientEvent[]>(mockMyEvents);
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<ClientEvent | null>(null);
+
+  // Sync active tab and form state from URL
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes("/my-events") || path.includes("/create")) {
+      setActiveTab("my-events");
+      if (path.includes("/create")) {
+        setIsEventFormOpen(true);
+      }
+    } else {
+      setActiveTab("invites");
+    }
+  }, [location.pathname]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (tab === "invites") navigate("/client/events/invites");
+    else navigate("/client/events/my-events");
+  };
 
   const handleAcceptInvite = (inviteId: string) => {
     setInvites((prev) => prev.filter((i) => i.id !== inviteId));
@@ -298,7 +320,7 @@ const ClientEvents = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="invites" className="flex items-center gap-2">
               <Mail className="h-4 w-4" />

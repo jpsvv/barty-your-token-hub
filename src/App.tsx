@@ -71,8 +71,14 @@ const App = () => (
                     <Route path="/client/operational/pending" element={<ClientOperational />} />
                     <Route path="/client/operational/cashier" element={<ClientOperational />} />
                     <Route path="/client/customers" element={<ClientCustomers />} />
+                    <Route path="/client/operational/production" element={<ClientOperational />} />
                     <Route path="/client/events" element={<ClientEvents />} />
+                    <Route path="/client/events/invites" element={<ClientEvents />} />
+                    <Route path="/client/events/create" element={<ClientEvents />} />
+                    <Route path="/client/events/my-events" element={<ClientEvents />} />
                     <Route path="/client/reports" element={<ClientReports />} />
+                    <Route path="/client/reports/sales" element={<ClientReports />} />
+                    <Route path="/client/reports/financial" element={<ClientReports />} />
 
                     {/* 404 */}
                     <Route path="*" element={<NotFound />} />

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ClientLayout } from "../layouts/ClientLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +14,22 @@ import FinancialReportTab from "../components/FinancialReportTab";
 import { toast } from "sonner";
 
 const ClientReports = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("sales");
+
+  // Sync active tab from URL
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes("/financial")) setActiveTab("financial");
+    else setActiveTab("sales");
+  }, [location.pathname]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (tab === "sales") navigate("/client/reports/sales");
+    else navigate("/client/reports/financial");
+  };
 
   const handleExport = () => {
     toast.success("Relatório exportado com sucesso! Verifique seus downloads.");
@@ -87,7 +103,7 @@ const ClientReports = () => {
         </div>
 
         {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="sales" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
