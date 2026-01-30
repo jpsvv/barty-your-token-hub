@@ -27,6 +27,7 @@ import ClientLogin from "./client/pages/ClientLogin";
 import ClientSignup from "./client/pages/ClientSignup";
 import ClientDashboard from "./client/pages/ClientDashboard";
 import ClientSettings from "./client/pages/ClientSettings";
+import ClientMenu from "./client/pages/ClientMenu";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,9 @@ const App = () => (
                     <Route path="/client/signup" element={<ClientSignup />} />
                     <Route path="/client/dashboard" element={<ClientDashboard />} />
                     <Route path="/client/settings" element={<ClientSettings />} />
+                    <Route path="/client/menu" element={<ClientMenu />} />
+                    <Route path="/client/menu/categories" element={<ClientMenu />} />
+                    <Route path="/client/menu/products" element={<ClientMenu />} />
 
                     {/* 404 */}
                     <Route path="*" element={<NotFound />} />
