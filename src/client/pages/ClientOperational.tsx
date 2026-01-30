@@ -5,16 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   ChefHat,
   Clock,
@@ -25,10 +15,18 @@ import {
   VolumeX,
   Trash2,
   Edit,
+  TrendingUp,
+  CreditCard,
+  Banknote,
+  Smartphone,
 } from "lucide-react";
-import { ProductionItem, PrintSector, PendingProduct, PendingTicket } from "@/types/client";
+import { ProductionItem, PrintSector, PendingProduct, PendingTicket, CashierTransaction } from "@/types/client";
 import ProductionSectorCard from "../components/ProductionSectorCard";
 import PrintSectorForm from "../components/PrintSectorForm";
+import PendingTicketCard from "../components/PendingTicketCard";
+import TransactionList from "../components/TransactionList";
+import TransactionDetails from "../components/TransactionDetails";
+import PendingPayments from "../components/PendingPayments";
 import useProductionSound from "../hooks/useProductionSound";
 import { toast } from "sonner";
 
@@ -142,6 +140,121 @@ const mockPendingTickets: PendingTicket[] = [
     purchasedAt: new Date(Date.now() - 45 * 60 * 1000),
     status: "not_sent",
   },
+  {
+    ticketId: "t12",
+    userId: "u3",
+    userName: "Pedro Lima",
+    userPhone: "(11) 99999-9012",
+    productId: "p2",
+    productName: "Batata Frita Grande",
+    purchasedAt: new Date(Date.now() - 20 * 60 * 1000),
+    status: "not_sent",
+  },
+  {
+    ticketId: "t13",
+    userId: "u4",
+    userName: "Ana Costa",
+    userPhone: "(11) 99999-3456",
+    productId: "p2",
+    productName: "Batata Frita Grande",
+    purchasedAt: new Date(Date.now() - 15 * 60 * 1000),
+    status: "in_production",
+  },
+  {
+    ticketId: "t14",
+    userId: "u5",
+    userName: "Carlos Souza",
+    userPhone: "(11) 99999-7890",
+    productId: "p3",
+    productName: "Caipirinha",
+    purchasedAt: new Date(Date.now() - 10 * 60 * 1000),
+    status: "ready",
+  },
+];
+
+const mockTransactions: CashierTransaction[] = [
+  {
+    id: "tx1",
+    orderNumber: "1234",
+    userId: "u1",
+    userName: "João Silva",
+    items: [
+      { productName: "Chope Pilsen 500ml", quantity: 2, price: 15 },
+      { productName: "Batata Frita Grande", quantity: 1, price: 25 },
+    ],
+    total: 55,
+    paymentMethod: "credit_card",
+    paymentStatus: "approved",
+    createdAt: new Date(Date.now() - 15 * 60 * 1000),
+  },
+  {
+    id: "tx2",
+    orderNumber: "1235",
+    userId: "u2",
+    userName: "Maria Santos",
+    items: [
+      { productName: "Caipirinha", quantity: 2, price: 18 },
+      { productName: "Porção de Carne", quantity: 1, price: 45 },
+    ],
+    total: 81,
+    paymentMethod: "pix",
+    paymentStatus: "approved",
+    createdAt: new Date(Date.now() - 10 * 60 * 1000),
+  },
+  {
+    id: "tx3",
+    orderNumber: "1236",
+    userId: "u3",
+    userName: "Pedro Lima",
+    items: [
+      { productName: "Chope Pilsen 500ml", quantity: 3, price: 15 },
+    ],
+    total: 45,
+    paymentMethod: "cash",
+    paymentStatus: "pending",
+    createdAt: new Date(Date.now() - 5 * 60 * 1000),
+  },
+  {
+    id: "tx4",
+    orderNumber: "1237",
+    userId: "u4",
+    userName: "Ana Costa",
+    items: [
+      { productName: "Batata Frita Grande", quantity: 2, price: 25 },
+      { productName: "Caipirinha", quantity: 1, price: 18 },
+    ],
+    total: 68,
+    paymentMethod: "debit_card",
+    paymentStatus: "approved",
+    createdAt: new Date(Date.now() - 3 * 60 * 1000),
+  },
+  {
+    id: "tx5",
+    orderNumber: "1238",
+    userId: "u5",
+    userName: "Carlos Souza",
+    items: [
+      { productName: "Porção de Carne", quantity: 1, price: 45 },
+      { productName: "Chope Pilsen 500ml", quantity: 2, price: 15 },
+    ],
+    total: 75,
+    paymentMethod: "cash",
+    paymentStatus: "pending",
+    createdAt: new Date(Date.now() - 1 * 60 * 1000),
+  },
+  {
+    id: "tx6",
+    orderNumber: "1239",
+    userId: "u6",
+    userName: "Fernanda Oliveira",
+    items: [
+      { productName: "Caipirinha", quantity: 3, price: 18 },
+    ],
+    total: 54,
+    paymentMethod: "wallet",
+    paymentStatus: "approved",
+    createdAt: new Date(),
+  },
 ];
 
 const ClientOperational = () => {
@@ -150,12 +263,14 @@ const ClientOperational = () => {
   const [activeTab, setActiveTab] = useState("production");
   const [sectors, setSectors] = useState<PrintSector[]>(mockSectors);
   const [productionItems, setProductionItems] = useState<ProductionItem[]>(mockProductionItems);
-  const [pendingProducts] = useState<PendingProduct[]>(mockPendingProducts);
-  const [pendingTickets] = useState<PendingTicket[]>(mockPendingTickets);
+  const [pendingProducts, setPendingProducts] = useState<PendingProduct[]>(mockPendingProducts);
+  const [pendingTickets, setPendingTickets] = useState<PendingTicket[]>(mockPendingTickets);
+  const [transactions, setTransactions] = useState<CashierTransaction[]>(mockTransactions);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [isSectorFormOpen, setIsSectorFormOpen] = useState(false);
   const [editingSector, setEditingSector] = useState<PrintSector | undefined>();
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [selectedTransaction, setSelectedTransaction] = useState<CashierTransaction | null>(null);
 
   const { playNewOrderSound, playReadySound, toggleSound } = useProductionSound();
 
@@ -230,17 +345,48 @@ const ClientOperational = () => {
   };
 
   const handleSendToProduction = (ticketId: string) => {
+    setPendingTickets((prev) =>
+      prev.map((t) =>
+        t.ticketId === ticketId ? { ...t, status: "in_production" as const } : t
+      )
+    );
     toast.success("Ficha enviada para produção!");
     playNewOrderSound();
   };
 
   const handleMarkPickup = (ticketId: string) => {
+    setPendingTickets((prev) => prev.filter((t) => t.ticketId !== ticketId));
     toast.success("Retirada confirmada!");
+  };
+
+  const handleApproveTransaction = (id: string) => {
+    setTransactions((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, paymentStatus: "approved" as const } : t
+      )
+    );
+    toast.success("Pagamento aprovado!");
+  };
+
+  const handleCancelTransaction = (id: string) => {
+    setTransactions((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, paymentStatus: "cancelled" as const } : t
+      )
+    );
+    toast.success("Pedido cancelado!");
   };
 
   const filteredTickets = selectedProduct
     ? pendingTickets.filter((t) => t.productId === selectedProduct)
     : [];
+
+  // Calculate cashier stats
+  const todayTransactions = transactions.filter((t) => t.paymentStatus === "approved");
+  const todayTotal = todayTransactions.reduce((sum, t) => sum + t.total, 0);
+  const pendingCashPayments = transactions.filter(
+    (t) => t.paymentMethod === "cash" && t.paymentStatus === "pending"
+  );
 
   return (
     <ClientLayout>
@@ -286,6 +432,11 @@ const ClientOperational = () => {
             <TabsTrigger value="cashier" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
               Caixa
+              {pendingCashPayments.length > 0 && (
+                <Badge variant="destructive" className="ml-1">
+                  {pendingCashPayments.length}
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -362,153 +513,190 @@ const ClientOperational = () => {
 
           {/* Pending Tab */}
           <TabsContent value="pending" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Pending Products */}
+            {/* Pending Products Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {pendingProducts.map((product) => (
+                <Card
+                  key={product.productId}
+                  className={`cursor-pointer transition-all ${
+                    selectedProduct === product.productId
+                      ? "ring-2 ring-primary"
+                      : "hover:shadow-md"
+                  }`}
+                  onClick={() =>
+                    setSelectedProduct(
+                      selectedProduct === product.productId
+                        ? null
+                        : product.productId
+                    )
+                  }
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">{product.productName}</p>
+                        {product.requiresPreparation && (
+                          <Badge variant="outline" className="text-xs mt-1">
+                            Preparo
+                          </Badge>
+                        )}
+                      </div>
+                      <Badge className="text-lg px-3 py-1">
+                        {product.pendingCount}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Selected Product Tickets */}
+            {selectedProduct && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Fichas Não Utilizadas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Produto</TableHead>
-                        <TableHead className="text-center">Qtd</TableHead>
-                        <TableHead className="text-right">Ação</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pendingProducts.map((product) => (
-                        <TableRow key={product.productId}>
-                          <TableCell className="font-medium">
-                            {product.productName}
-                            {product.requiresPreparation && (
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                Preparo
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="secondary">
-                              {product.pendingCount}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                setSelectedProduct(
-                                  selectedProduct === product.productId
-                                    ? null
-                                    : product.productId
-                                )
-                              }
-                            >
-                              {selectedProduct === product.productId
-                                ? "Fechar"
-                                : "Ver"}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-
-              {/* Client Tickets */}
-              {selectedProduct && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    <span>
                       Clientes com Fichas:{" "}
                       {
                         pendingProducts.find((p) => p.productId === selectedProduct)
                           ?.productName
                       }
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {filteredTickets.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-4">
-                        Nenhuma ficha pendente encontrada
-                      </p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Compra</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredTickets.map((ticket) => (
-                            <TableRow key={ticket.ticketId}>
-                              <TableCell>
-                                <div>
-                                  <p className="font-medium">{ticket.userName}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {ticket.userPhone}
-                                  </p>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                {new Date(ticket.purchasedAt).toLocaleTimeString(
-                                  "pt-BR",
-                                  { hour: "2-digit", minute: "2-digit" }
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  {pendingProducts.find(
-                                    (p) => p.productId === ticket.productId
-                                  )?.requiresPreparation ? (
-                                    <Button
-                                      size="sm"
-                                      onClick={() =>
-                                        handleSendToProduction(ticket.ticketId)
-                                      }
-                                    >
-                                      Produção
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() =>
-                                        handleMarkPickup(ticket.ticketId)
-                                      }
-                                    >
-                                      Retirar
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                    </span>
+                    <Badge variant="secondary">
+                      {filteredTickets.length} fichas
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {filteredTickets.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      Nenhuma ficha pendente encontrada para este produto
+                    </p>
+                  ) : (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filteredTickets.map((ticket) => (
+                        <PendingTicketCard
+                          key={ticket.ticketId}
+                          ticket={ticket}
+                          requiresPreparation={
+                            pendingProducts.find(
+                              (p) => p.productId === ticket.productId
+                            )?.requiresPreparation ?? false
+                          }
+                          onSendToProduction={handleSendToProduction}
+                          onMarkPickup={handleMarkPickup}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {!selectedProduct && (
+              <Card>
+                <CardContent className="py-12">
+                  <p className="text-muted-foreground text-center">
+                    Clique em um produto acima para ver os clientes com fichas pendentes
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Cashier Tab */}
           <TabsContent value="cashier" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Caixa</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  A funcionalidade de caixa será implementada na Fase 5.
-                </p>
-              </CardContent>
-            </Card>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-500/20 rounded-lg">
+                      <TrendingUp className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Faturamento</p>
+                      <p className="text-xl font-bold">
+                        R$ {todayTotal.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/20 rounded-lg">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Cartões</p>
+                      <p className="text-xl font-bold">
+                        {
+                          transactions.filter(
+                            (t) =>
+                              (t.paymentMethod === "credit_card" ||
+                                t.paymentMethod === "debit_card") &&
+                              t.paymentStatus === "approved"
+                          ).length
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-500/20 rounded-lg">
+                      <Smartphone className="h-5 w-5 text-purple-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">PIX</p>
+                      <p className="text-xl font-bold">
+                        {
+                          transactions.filter(
+                            (t) =>
+                              t.paymentMethod === "pix" &&
+                              t.paymentStatus === "approved"
+                          ).length
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-500/20 rounded-lg">
+                      <Banknote className="h-5 w-5 text-yellow-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Pendentes</p>
+                      <p className="text-xl font-bold text-yellow-500">
+                        {pendingCashPayments.length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Pending Cash Payments */}
+            <PendingPayments
+              transactions={transactions}
+              onApprove={handleApproveTransaction}
+              onCancel={handleCancelTransaction}
+            />
+
+            {/* All Transactions */}
+            <TransactionList
+              transactions={transactions}
+              onApprove={handleApproveTransaction}
+              onCancel={handleCancelTransaction}
+              onViewDetails={setSelectedTransaction}
+            />
           </TabsContent>
         </Tabs>
 
@@ -521,6 +709,13 @@ const ClientOperational = () => {
             setEditingSector(undefined);
           }}
           onSave={handleSaveSector}
+        />
+
+        {/* Transaction Details Modal */}
+        <TransactionDetails
+          transaction={selectedTransaction}
+          isOpen={!!selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
         />
       </div>
     </ClientLayout>
