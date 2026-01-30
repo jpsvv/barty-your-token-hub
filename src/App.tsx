@@ -28,6 +28,7 @@ import ClientSignup from "./client/pages/ClientSignup";
 import ClientDashboard from "./client/pages/ClientDashboard";
 import ClientSettings from "./client/pages/ClientSettings";
 import ClientMenu from "./client/pages/ClientMenu";
+import ClientOperational from "./client/pages/ClientOperational";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,9 @@ const App = () => (
                     <Route path="/client/menu" element={<ClientMenu />} />
                     <Route path="/client/menu/categories" element={<ClientMenu />} />
                     <Route path="/client/menu/products" element={<ClientMenu />} />
+                    <Route path="/client/operational" element={<ClientOperational />} />
+                    <Route path="/client/operational/pending" element={<ClientOperational />} />
+                    <Route path="/client/operational/cashier" element={<ClientOperational />} />
 
                     {/* 404 */}
                     <Route path="*" element={<NotFound />} />
