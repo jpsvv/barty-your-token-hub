@@ -26,6 +26,7 @@ import NotFound from "./pages/NotFound";
 import ClientLogin from "./client/pages/ClientLogin";
 import ClientSignup from "./client/pages/ClientSignup";
 import ClientDashboard from "./client/pages/ClientDashboard";
+import ClientSettings from "./client/pages/ClientSettings";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
                     <Route path="/client" element={<ClientLogin />} />
                     <Route path="/client/signup" element={<ClientSignup />} />
                     <Route path="/client/dashboard" element={<ClientDashboard />} />
+                    <Route path="/client/settings" element={<ClientSettings />} />
 
                     {/* 404 */}
                     <Route path="*" element={<NotFound />} />

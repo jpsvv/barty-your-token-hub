@@ -11,8 +11,10 @@ import {
   Power,
   PowerOff,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { ClientHeader } from '@/client/components/ClientHeader';
 import { ClientLayout } from '@/client/layouts/ClientLayout';
+import { SalesAreaChart, PaymentPieChart } from '@/client/components/SalesChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -99,6 +101,18 @@ function ProductionStatusCard({
   );
 }
 
+// Generate mock hourly sales data
+const generateHourlySales = () => {
+  const hours = [];
+  for (let i = 18; i <= 23; i++) {
+    hours.push({ hour: i, amount: Math.floor(Math.random() * 1500) + 500 });
+  }
+  for (let i = 0; i <= 2; i++) {
+    hours.push({ hour: i, amount: Math.floor(Math.random() * 800) + 200 });
+  }
+  return hours;
+};
+
 export default function ClientDashboard() {
   const { client, updateClient } = useClientAuth();
   const [showCloseDialog, setShowCloseDialog] = useState(false);
@@ -106,6 +120,7 @@ export default function ClientDashboard() {
   const [closeTime, setCloseTime] = useState('15');
 
   const data = mockDashboardData;
+  const hourlySales = generateHourlySales();
 
   const handleToggleOpen = () => {
     if (client?.isOpen) {
@@ -124,6 +139,8 @@ export default function ClientDashboard() {
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+  const menuUrl = `https://barty.app/${client?.id || 'demo'}`;
 
   return (
     <ClientLayout>
@@ -218,6 +235,12 @@ export default function ClientDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Gráficos */}
+        <div className="mb-6 grid gap-6 lg:grid-cols-2">
+          <SalesAreaChart data={hourlySales} title="Vendas por Hora" />
+          <PaymentPieChart data={data.paymentBreakdown} title="Formas de Pagamento" />
+        </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Produtos Mais Vendidos */}
@@ -335,17 +358,44 @@ export default function ClientDashboard() {
               Escaneie para acessar o cardápio do {client?.tradingName}
             </DialogDescription>
           </DialogHeader>
-          <div className="mx-auto my-4 flex h-48 w-48 items-center justify-center rounded-lg border-2 border-dashed">
-            <QrCode className="h-32 w-32 text-muted-foreground" />
+          <div className="mx-auto my-4 flex items-center justify-center rounded-lg border bg-white p-4">
+            <QRCodeSVG
+              value={menuUrl}
+              size={200}
+              level="H"
+              includeMargin
+            />
           </div>
           <p className="text-sm text-muted-foreground">
-            barty.app/{client?.id}
+            {menuUrl}
           </p>
           <DialogFooter className="sm:justify-center">
             <Button variant="outline" onClick={() => setShowQRDialog(false)}>
               Fechar
             </Button>
-            <Button>Baixar QR Code</Button>
+            <Button onClick={() => {
+              // Download QR Code
+              const svg = document.querySelector('.mx-auto svg');
+              if (svg) {
+                const svgData = new XMLSerializer().serializeToString(svg);
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                img.onload = () => {
+                  canvas.width = img.width;
+                  canvas.height = img.height;
+                  ctx?.drawImage(img, 0, 0);
+                  const pngFile = canvas.toDataURL('image/png');
+                  const downloadLink = document.createElement('a');
+                  downloadLink.download = `qrcode-${client?.tradingName || 'menu'}.png`;
+                  downloadLink.href = pngFile;
+                  downloadLink.click();
+                };
+                img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+              }
+            }}>
+              Baixar QR Code
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
