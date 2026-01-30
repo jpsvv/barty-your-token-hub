@@ -29,6 +29,7 @@ import ClientDashboard from "./client/pages/ClientDashboard";
 import ClientSettings from "./client/pages/ClientSettings";
 import ClientMenu from "./client/pages/ClientMenu";
 import ClientOperational from "./client/pages/ClientOperational";
+import ClientCustomers from "./client/pages/ClientCustomers";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const App = () => (
                     <Route path="/client/operational" element={<ClientOperational />} />
                     <Route path="/client/operational/pending" element={<ClientOperational />} />
                     <Route path="/client/operational/cashier" element={<ClientOperational />} />
+                    <Route path="/client/customers" element={<ClientCustomers />} />
 
                     {/* 404 */}
                     <Route path="*" element={<NotFound />} />
