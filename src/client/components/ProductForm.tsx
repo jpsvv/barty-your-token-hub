@@ -253,7 +253,7 @@ export function ProductForm({
       promotionalPrice: hasPromotion ? parseFloat(promotionalPrice) : undefined,
       discountPercent: hasPromotion ? parseInt(discountPercent) : undefined,
       prepTime: parseInt(prepTime),
-      printSectorId: printSectorId || undefined,
+      printSectorId: printSectorId && printSectorId !== 'none' ? printSectorId : undefined,
       order: parseInt(order),
       ticketValidity: {
         type: validityType,
@@ -480,7 +480,7 @@ export function ProductForm({
                   <SelectValue placeholder="Nenhum (não imprime)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {printSectors
                     .filter((s) => s.isActive)
                     .map((sector) => (
